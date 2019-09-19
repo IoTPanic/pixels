@@ -1,9 +1,12 @@
 # PIXELS - A super simple LED application layer
 
-This protocols goal is to allow for sending pixel data (color values) to rgb and rgbw stripes in a performant way.
-This is especially useful for sending data in "realtime" to led stripes connected to an ESP32 via WIFI/UDP.
+This protocols goal is to allow for sending pixel data (color values) to
+rgb and rgbw stripes in a performant way. This is especially useful for
+sending data in "realtime" to led stripes connected to an ESP32 via
+WIFI/UDP.
 
-This protocol is based on [s - Little Stream - Embedded streaming layer for UDPX](https://github.com/IoTPanic/s)
+This protocol is based on
+[s - Little Stream - Embedded streaming layer for UDPX](https://github.com/IoTPanic/s)
 
 ## Message Structure
 
@@ -15,11 +18,11 @@ A message consists of a **header**, a **payload** and a **crc-check**:
 
 ### Header
 
-| Byte Number: | 1                     | 2         | 3              | 4-5                         |
-|:-------------|:----------------------|:----------|:---------------|:----------------------------|
-|              | Message Type          | Sync Word | Channel Number | Length of payload           |
-| Data Type    | Uint8                 | Uint8     | Uint8          | 16 bit LSB unsigned integer |
-| Example      | HEX: 0x50 / ASCII: 80 |           | 1              | 144                         |
+| Byte Number: | 1                     | 2         | 3              | 4-5                                                                                      |
+|:-------------|:----------------------|:----------|:---------------|:-----------------------------------------------------------------------------------------|
+|              | Message Type          | Sync Word | Channel Number | Length of payload                                                                        |
+| Data Type    | Uint8                 | Uint8     | Uint8          | 16 bit [LSB](https://developer.mozilla.org/de/docs/Glossary/Endianness) unsigned integer |
+| Example      | HEX: 0x50 / ASCII: 80 |           | 1              | 144                                                                                      |
 
 #### Message Type
 
@@ -70,15 +73,18 @@ using the white led of an rgbw strip.
 |:--|:--|:--|:----|
 
 ### CRC Check
-```
-uint8_t crc = 0x0;
-for(uint i = 0; i<size;i++){
-   crc = crc ^ payload[i];
-}
-```
+
 | Byte Number: | 1     |
 |:-------------|:------|
 |              | CRC   |
 | Data Type    | Uint8 |
 | Example      | 34    |
 
+#### example implementation:
+
+```c++
+uint8_t crc = 0x0;
+for(uint i = 0; i<size;i++){
+   crc = crc ^ payload[i];
+}
+```
