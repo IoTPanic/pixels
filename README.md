@@ -70,7 +70,12 @@ using the white led of an rgbw strip.
 |:--|:--|:--|:----|
 
 ### CRC Check
-
+```
+uint8_t crc = 0x0;
+for(uint i = 0; i<size;i++){
+   crc = crc ^ payload[i];
+}
+```
 | Byte Number: | 1     |
 |:-------------|:------|
 |              | CRC   |
