@@ -1,19 +1,79 @@
 # PIXELS - A super simple LED application layer
 
-This lib will be able to support up to ~21830 pixels on each of 255 channels if we wanted to add channels (Multiple strips) when using UDP and s. ESP wont handle all that tho XD
+This protocols goal is to allow for sending pixel data (color values) to rgb and rgbw stripes in a performant way.
+This is especially useful for sending data in "realtime" to led stripes connected to an ESP32 via WIFI/UDP.
 
-I made this lib also the neo-pixel driver because I thought that made reasonable sense. I was thinking we could add effects or something as well to this lib, idk.
+This protocol is based on [s - Little Stream - Embedded streaming layer for UDPX](https://github.com/IoTPanic/s)
 
-# Protocol 
+## Message Structure
 
-**Not final yet**
+A message consists of a **header**, a **payload** and a **crc-check**:
 
-I'm thinking a starting byte if a 0x50 for a ascii `p` for pixels. This is to verify that the message is in fact pixel data. There could be other protocols that always start with 0x50, but this gets the job done. After that comes the sync word, this is to verify the right client is connected and the right mode is on (Future features ;) ). Following that is a unsigned 8-bit LED channel number, after that, a 16 bit LSB unsigned integer follows that is the number of RGB or RGBW values. The RGB or RGBW must be selected and is a part of the mode mentioned earlier. The device should inform the application if it is RGB or RGBW in the used control communication (MQTT in this case). After this, there is an array of three or four byte RGB or RGBW values respectively the length of the number of pixels in the uint16 size value. After this, there is a one byte CRC for checking the UDP message arrived correctly (Optional, setting constant `USECRC` to false in the header file will remove the CRC check).
+| Header (5Bytes) | Payload (x Bytes) | CRC-Check (1 Byte) |
+|:----------------|:------------------|:-------------------|
 
-About:
-16 bit LSB unsigned integer follows that is the number of RGB or RGBW values if I would like to send 900
 
-900 then it will be 0x0384 = 00000011 10000100
+### Header
 
-being 4 Byte: 03 
-  and 5 Byte: 84
+| Byte Number: | 1                     | 2         | 3              | 4-5                         |
+|:-------------|:----------------------|:----------|:---------------|:----------------------------|
+|              | Message Type          | Sync Word | Channel Number | Length of payload           |
+| Data Type    | Uint8                 | Uint8     | Uint8          | 16 bit LSB unsigned integer |
+| Example      | HEX: 0x50 / ASCII: 80 |           | 1              | 144                         |
+
+#### Message Type
+
+The starting byte must be `0x50` which is ascii uppercase **'P'**. (This
+stands for 'pixels'). This is to verify that the message is in fact
+pixel data.
+
+There could be other protocols that always start with 0x50, but chances
+are good that you'll not face that kind of problem.
+
+#### Sync Word
+
+This is to verify the right client is connected and the right mode is
+on.
+
+#### Channel Number
+
+Which channel of the controller should consume the payload to be sent?
+
+#### Length of payload
+
+How many pixels will be in the payload?
+
+### Payload
+
+| Byte Number: | 1     | 2     | 3     | 4     | ... |
+|:-------------|:------|:------|:------|:------|:----|
+|              | R     | G     | B     | (W)   | ... |
+| Data Type    | Uint8 | Uint8 | Uint8 | Uint8 | ... |
+| Example      | 16    | 155   | 43    | 0     | ... |
+
+The payload consists of RGB or RGBW values, depending on which mode is
+used. **The number of values sent in the payload must match "Length of
+payload" setting in the message header.** An RGB Value consists of 3
+Uint8 values representing the brightness for the colors Red, Green and
+Blue.
+
+Example: this is 'red' (#ff0000)
+
+| 255 | 0 | 0 |
+|:----|:--|:--|
+
+An RGBW Value consists of 4 Uint8 values representing the brightness for
+the colors Red, Green and Blue and White. Example: this is 'pure white'
+using the white led of an rgbw strip.
+
+| 0 | 0 | 0 | 255 |
+|:--|:--|:--|:----|
+
+### CRC Check
+
+| Byte Number: | 1     |
+|:-------------|:------|
+|              | CRC   |
+| Data Type    | Uint8 |
+| Example      | 34    |
+
