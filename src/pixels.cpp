@@ -1,30 +1,32 @@
 #include <pixels.h>
 
-
 // This block will select if the ESP32 or ESP8266 is selected. It is in the cpp file to stay private,
 // if I were coding this library at work, I would do this, but it could easily be placed in the header
 // file if you want to interact with it in main.cpp
+
 #ifdef ESP32
-    // This section selects whether we want to initialize the Neopixel lib in RGB or RGBW. Since I made
-    /// a class, I can make it so you can hot select RGB or RGBW. I just don't see a use for that. ( I 
-    // looked into putting it into class, we can if we use a different lib. This one is pretty inflexable
-    // after compile time. But idc rn)
-    #ifdef RGBW
-        NeoPixelBus<NeoGrbwFeature, Neo800KbpsMethod> strip(PIXELCOUNT, PIXELPIN);
-    #else
-        NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PIXELCOUNT, PIXELPIN);
-    #endif
+    #define DRIVERMETHOD Neo800KbpsMethod
 #elif ESP8266
-    #ifndef RGBW
-        NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma800KbpsMethod> strip(PIXELCOUNT, 3);
+    #define DRIVERMETHOD NeoEsp8266Dma800KbpsMethod
+#else
+    #error This was written for ESPs, specify your own driver method
+#endif
+
+#if GRB
+    #if RGBW
+    #define COLORMODE NeoGrbwFeature
     #else
-        NeoPixelBus<NeoGrbwFeature, NeoEsp8266Dma800KbpsMethod> strip(PIXELCOUNT, 3);
+    #define COLORMODE NeoGrbFeature
     #endif
 #else
-    // Place for someone who wants to support another platform to get started easily
-    NeoPixelBus<, > strip(PIXELCOUNT, 3);
-    #error This was written for ESPs, if you would like to use something else, define it above
+    #if RGBW
+    #define COLORMODE NeoRgbwFeature
+    #else
+    #define COLORMODE NeoRgbFeature
+    #endif
 #endif
+
+NeoPixelBus<COLORMODE, DRIVERMETHOD> strip(PIXELCOUNT, 3);
 
 PIXELS::PIXELS(){} // I'll do something with this, I swear.
 
@@ -36,9 +38,11 @@ void PIXELS::init(){
 
 bool PIXELS::receive(uint8_t *pyld, unsigned length){
     uint16_t pixCnt = 0;
-    pixel *pattern = unmarshal(pyld, length, &pixCnt);
+    uint8_t chan = 0;
+    pixel *pattern = unmarshal(pyld, length, &pixCnt, &chan);
+        
     if(pixCnt==0){
-        strip.Show();
+        strip.Show(chan);
         Serial.println("Clearing strand");
         return true;
     }
@@ -53,7 +57,7 @@ bool PIXELS::receive(uint8_t *pyld, unsigned length){
         Serial.println(")");
     }
     */
-    this->show(pattern, pixCnt);
+    show(pattern, pixCnt, chan)
     delete pattern;
     return true;
 }
@@ -66,19 +70,41 @@ void PIXELS::write(unsigned location, uint8_t R, uint8_t G, uint8_t B, uint8_t W
     #endif
 }
 
-void PIXELS::show(){
-    strip.Show();
+void PIXELS::show(uint8_t chan){
+    for(channel *o = channels.begin(); o != channels.end(); ++o){
+        if(o->chan==chan){
+            strip.Show();
+            return;
+        }
+    }
 }
 
-void PIXELS::show(pixel *pixels, unsigned cnt){
-    for(unsigned i = 0; i<cnt; i++){
-        #ifdef RGBW
-        strip.SetPixelColor(i, RgbwColor(pixels[i].R,pixels[i].G,pixels[i].B,pixels[i].W));
-        #else
-        strip.SetPixelColor(i, RgbColor(pixels[i].R,pixels[i].G,pixels[i].B));
-        #endif
+void PIXELS::show(pixel *pixels, unsigned cnt, uint8_t chan){
+    for(channel *o = channels.begin(); o != channels.end(); ++o){
+        if(o->chan==chan){
+            for(unsigned i = 0; i<cnt; i++){
+                #ifdef RGBW
+                o->bus.SetPixelColor(i, RgbwColor(pixels[i].R,pixels[i].G,pixels[i].B,pixels[i].W));
+                #else
+                o->bus.SetPixelColor(i, RgbColor(pixels[i].R,pixels[i].G,pixels[i].B));
+                #endif
+            }
+            strip.Show();
+            return;
+        }
     }
-    strip.Show();
+}
+
+bool PIXELS::addChannel(int dataPin, int clkPin, unsigned cnt, uint8_t chan){
+    for(channel *i = channels.begin(); i != pixels.end(); ++i){
+        if(i->chan==chan){
+            return false;
+        }
+    }
+    NeoPixelBus bus = NeoPixelBus(cnt, clkPin, dataPin);
+    channel c = {&bus, chan};
+    channels.push_back(c);
+    return true;
 }
 
 pixel *PIXELS::unmarshal(uint8_t *pyld, unsigned len, uint16_t *pixCnt, uint8_t *channel){
@@ -97,15 +123,7 @@ pixel *PIXELS::unmarshal(uint8_t *pyld, unsigned len, uint16_t *pixCnt, uint8_t 
     }
     // Decode number of pixels, we don't have to send the entire strip if we don't want to
     uint16_t cnt = pyld[3] | pyld[4]<<8;
-    if(cnt>PIXELCOUNT){
-        // We got more pixels than the strip allows
-        *pixCnt = 0;
-        return NULL;
-    }
-    if (cnt ==0)
-    {
-        return false;
-    }
+
     pixel *result = new pixel[cnt];
     // TODO Add logic to return if len is impossibly large or small
     for(uint16_t i = 0; i<cnt; i++){
