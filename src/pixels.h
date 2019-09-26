@@ -36,6 +36,32 @@
 
 #define USECRC false
 
+// This block will select if the ESP32 or ESP8266 is selected. It is in the cpp file to stay private,
+// if I were coding this library at work, I would do this, but it could easily be placed in the header
+// file if you want to interact with it in main.cpp
+
+#ifdef ESP32
+    #define DRIVERMETHOD Neo800KbpsMethod
+#elif ESP8266
+    #define DRIVERMETHOD NeoEsp8266Dma800KbpsMethod
+#else
+    #error This was written for ESPs, specify your own driver method
+#endif
+
+#if GRB
+    #if RGBW
+    #define COLORMODE NeoGrbwFeature
+    #else
+    #define COLORMODE NeoGrbFeature
+    #endif
+#else
+    #if RGBW
+    #define COLORMODE NeoRgbwFeature
+    #else
+    #define COLORMODE NeoRgbFeature
+    #endif
+#endif
+
 typedef struct{
     uint8_t R = 0;
     uint8_t G = 0;
@@ -46,7 +72,7 @@ typedef struct{
 } pixel;
 
 typedef struct {
-    NeoPixelBus *bus;
+    NeoPixelBus<COLORMODE, DRIVERMETHOD> *bus;
     uint8_t chan;
 }channel;
 
@@ -54,8 +80,6 @@ class PIXELS
 {
     public:
     PIXELS();
-
-    void init();
     // receive requires a pointer to a uint8_t array and the length of the array from a callback function
     bool receive(uint8_t *pyld, unsigned len);
     // sync will return the sync byte as a uint8_t to ensure the library and controller are on the same page
@@ -69,7 +93,7 @@ class PIXELS
     void show(pixel *pixels, unsigned cnt, uint8_t chan);
 
     // addChannel adds a channel of neopixels to the device, returns false of channel number exists
-    bool addChannel(int dataPin, int clockPin, unsigned cnt, uint8_t chan);
+    bool addChannel(int dataPin, unsigned cnt, uint8_t chan);
 
     private:
     // unmarshal returns a pointer to an array of pixels and accepts a pointer to a uint8_t array payload with the length of the array, as
@@ -79,7 +103,8 @@ class PIXELS
 
     uint8_t syncWord = 0x0;
 
-    vector<*channel> channels;
+    channel *channels;
+    unsigned channel_cnt = 0;
 
     // We want to inform our lib if RGB or RGBW was selected
     #ifdef RGBW

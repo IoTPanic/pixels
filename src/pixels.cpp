@@ -1,40 +1,6 @@
 #include <pixels.h>
 
-// This block will select if the ESP32 or ESP8266 is selected. It is in the cpp file to stay private,
-// if I were coding this library at work, I would do this, but it could easily be placed in the header
-// file if you want to interact with it in main.cpp
-
-#ifdef ESP32
-    #define DRIVERMETHOD Neo800KbpsMethod
-#elif ESP8266
-    #define DRIVERMETHOD NeoEsp8266Dma800KbpsMethod
-#else
-    #error This was written for ESPs, specify your own driver method
-#endif
-
-#if GRB
-    #if RGBW
-    #define COLORMODE NeoGrbwFeature
-    #else
-    #define COLORMODE NeoGrbFeature
-    #endif
-#else
-    #if RGBW
-    #define COLORMODE NeoRgbwFeature
-    #else
-    #define COLORMODE NeoRgbFeature
-    #endif
-#endif
-
-NeoPixelBus<COLORMODE, DRIVERMETHOD> strip(PIXELCOUNT, 3);
-
 PIXELS::PIXELS(){} // I'll do something with this, I swear.
-
-void PIXELS::init(){
-    // Starts the LEDs and blanks them out
-    strip.Begin();
-    strip.Show();
-}
 
 bool PIXELS::receive(uint8_t *pyld, unsigned length){
     uint16_t pixCnt = 0;
@@ -42,7 +8,7 @@ bool PIXELS::receive(uint8_t *pyld, unsigned length){
     pixel *pattern = unmarshal(pyld, length, &pixCnt, &chan);
         
     if(pixCnt==0){
-        strip.Show(chan);
+        show(chan);
         Serial.println("Clearing strand");
         return true;
     }
@@ -57,53 +23,59 @@ bool PIXELS::receive(uint8_t *pyld, unsigned length){
         Serial.println(")");
     }
     */
-    show(pattern, pixCnt, chan)
+    show(pattern, pixCnt, chan);
     delete pattern;
     return true;
 }
 
 void PIXELS::write(unsigned location, uint8_t R, uint8_t G, uint8_t B, uint8_t W){
+    /*
     #ifdef RGBW
     strip.SetPixelColor(location, RgbwColor(R,G,B,W));
     #else
     strip.SetPixelColor(location, RgbColor(R,G,B));
     #endif
+    */
 }
 
 void PIXELS::show(uint8_t chan){
-    for(channel *o = channels.begin(); o != channels.end(); ++o){
-        if(o->chan==chan){
-            strip.Show();
+    for(unsigned i=0; i<channel_cnt; i++){
+        if(channels[i].chan==chan){
+            channels[i].bus->Show();
             return;
         }
     }
 }
 
 void PIXELS::show(pixel *pixels, unsigned cnt, uint8_t chan){
-    for(channel *o = channels.begin(); o != channels.end(); ++o){
-        if(o->chan==chan){
+    for(unsigned i=0; i<channel_cnt; i++){
+        if(channels[i].chan==chan){
             for(unsigned i = 0; i<cnt; i++){
-                #ifdef RGBW
-                o->bus.SetPixelColor(i, RgbwColor(pixels[i].R,pixels[i].G,pixels[i].B,pixels[i].W));
+                #if RGBW
+                channels[i].bus->SetPixelColor(i, RgbwColor(pixels[i].R,pixels[i].G,pixels[i].B,pixels[i].W));
                 #else
-                o->bus.SetPixelColor(i, RgbColor(pixels[i].R,pixels[i].G,pixels[i].B));
+                channels[i].bus->SetPixelColor(i, RgbColor(pixels[i].R,pixels[i].G,pixels[i].B));
                 #endif
             }
-            strip.Show();
+            channels[i].bus->Show();
             return;
         }
     }
 }
 
-bool PIXELS::addChannel(int dataPin, int clkPin, unsigned cnt, uint8_t chan){
-    for(channel *i = channels.begin(); i != pixels.end(); ++i){
-        if(i->chan==chan){
-            return false;
-        }
-    }
-    NeoPixelBus bus = NeoPixelBus(cnt, clkPin, dataPin);
+bool PIXELS::addChannel(int dataPin, unsigned cnt, uint8_t chan){
+    NeoPixelBus<COLORMODE, DRIVERMETHOD> bus(cnt, dataPin);
     channel c = {&bus, chan};
-    channels.push_back(c);
+    channel *n = new channel[channel_cnt+1];
+    if(!n){
+        channel_cnt;
+        return false;
+    }
+    c.bus->Begin();
+    memcpy(n, channels, sizeof(channel[channel_cnt]));
+    channels = n;
+    channels[channel_cnt++] = c; // Ensure this line works properly, should place pointer to channel at end of array than inc number of channels to the correct cnt
+
     return true;
 }
 
