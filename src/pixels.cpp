@@ -82,8 +82,8 @@ bool PIXELS::addChannel(int dataPin, unsigned cnt, uint8_t chan){
             return false;
         }
     }
-    NeoPixelBus<COLORMODE, DRIVERMETHOD> bus(cnt, dataPin);
-    channel c = {&bus, chan};
+    NeoPixelBus<COLORMODE, DRIVERMETHOD> *bus = new NeoPixelBus<COLORMODE, DRIVERMETHOD>(cnt, dataPin);
+    channel c = {bus, chan};
     channel *n = new channel[channel_cnt+1];
     if(!n){
         channel_cnt;
