@@ -1,12 +1,28 @@
 # PIXELS - A super simple LED application layer
 
-This protocols goal is to allow for sending pixel data (color values) to
-rgb and rgbw stripes in a performant way. This is especially useful for
-sending data in "realtime" to led stripes connected to an ESP32 via
-WIFI/UDP.
+This protocols goal is to allow for sending pixel data (color values) to rgb and rgbw stripes in a performant way. This is especially useful for sending data in "realtime" to led stripes connected to an ESP32 via WIFI/UDP.
 
-This protocol is based on
-[s - Little Stream - Embedded streaming layer for UDPX](https://github.com/IoTPanic/s)
+This protocol was written originally for [udpx](https://github.com/martinberlin/udpx).
+
+## Installation
+
+### PlatformIO
+
+PlatformIO should automatically install this package if `https://github.com/IoTPanic/pixels.git` is added to the `lib_deps` section of `platformio.ini`. We plan on adding this library to PlatformIO library manager soon. If the current method is used, the library will be git cloned into `.pio/libdeps/` so if you need to switch to a development branch you can, remember to hit the trash can icon and clean the cache before building agian.
+
+### Arduino
+
+Coming Soon, Just need to make a _library.properties_ but will be installable like any library.
+
+## Usage 
+
+1. Install with the instructions provided in the installation section.
+2. If using RGBW LEDs, set the `RGBW` constant in `pixels.h` to `1`.
+3. If using LEDs that communicate in the GRB order, set the `GRB` constant in `pixels.h` to `1`.
+4. Set the `DRIVERMETHOD` in `pixels.h` to inform the neopixel library how to implement itself if your platform is not an ESP32 or ESP8266. Remember to remove the #error line to allow the library to compile if true.
+5. Import the `PIXELS` constructor into your application.
+6. In the setup code, use `bool addChannel(int pin, unsigned LED_count, uint8_t channel_number)` to connect one or many LED strips.
+7. Call `bool PIXELS::receive(uint8_t *pyld, unsigned length)` when ever pixels data is received with pyld being a uint8_t array and length being the array length. You may use any transport method you want, but check out [s - Little Stream - Embedded streaming layer for UDPX](https://github.com/IoTPanic/s).
 
 ## Message Structure
 
