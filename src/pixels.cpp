@@ -64,6 +64,11 @@ void PIXELS::show(pixel *pixels, unsigned cnt, uint8_t chan){
 }
 
 bool PIXELS::addChannel(int dataPin, unsigned cnt, uint8_t chan){
+     for(unsigned i=0; i<channel_cnt; i++){
+        if(channels[i].chan==chan){
+            return false;
+        }
+    }
     NeoPixelBus<COLORMODE, DRIVERMETHOD> bus(cnt, dataPin);
     channel c = {&bus, chan};
     channel *n = new channel[channel_cnt+1];
