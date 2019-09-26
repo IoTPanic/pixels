@@ -5,8 +5,9 @@ PIXELS::PIXELS(){} // I'll do something with this, I swear.
 bool PIXELS::receive(uint8_t *pyld, unsigned length){
     uint16_t pixCnt = 0;
     uint8_t chan = 0;
+    Serial.println("About to unmarshal");
     pixel *pattern = unmarshal(pyld, length, &pixCnt, &chan);
-        
+    Serial.println("Marshalled!");
     if(pixCnt==0){
         show(chan);
         Serial.println("Clearing strand");
@@ -23,7 +24,9 @@ bool PIXELS::receive(uint8_t *pyld, unsigned length){
         Serial.println(")");
     }
     */
+   Serial.println("About to show");
     show(pattern, pixCnt, chan);
+    Serial.println("Shown");
     delete pattern;
     return true;
 }
@@ -50,6 +53,7 @@ void PIXELS::show(uint8_t chan){
 void PIXELS::show(pixel *pixels, unsigned cnt, uint8_t chan){
     for(unsigned i=0; i<channel_cnt; i++){
         if(channels[i].chan==chan){
+            Serial.println("Found correct channel!");
             for(unsigned i = 0; i<cnt; i++){
                 #if RGBW
                 channels[i].bus->SetPixelColor(i, RgbwColor(pixels[i].R,pixels[i].G,pixels[i].B,pixels[i].W));
@@ -58,6 +62,7 @@ void PIXELS::show(pixel *pixels, unsigned cnt, uint8_t chan){
                 #endif
             }
             channels[i].bus->Show();
+            Serial.println("SHOWN!");
             return;
         }
     }
@@ -77,6 +82,7 @@ bool PIXELS::addChannel(int dataPin, unsigned cnt, uint8_t chan){
         return false;
     }
     c.bus->Begin();
+    c.bus->Show();
     memcpy(n, channels, sizeof(channel[channel_cnt]));
     channels = n;
     channels[channel_cnt++] = c; // Ensure this line works properly, should place pointer to channel at end of array than inc number of channels to the correct cnt

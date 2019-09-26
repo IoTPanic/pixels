@@ -46,6 +46,7 @@
     #define DRIVERMETHOD NeoEsp8266Dma800KbpsMethod
 #else
     #error This was written for ESPs, specify your own driver method
+    #define DRIVERMETHOD // Place method here
 #endif
 
 #if GRB
