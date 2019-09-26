@@ -3,6 +3,14 @@
 PIXELS::PIXELS(){} // I'll do something with this, I swear.
 
 bool PIXELS::receive(uint8_t *pyld, unsigned length){
+    Serial.println("Message received is ");
+    for(unsigned i =0; i<length; i++){
+        Serial.print(pyld[i]);
+        Serial.print(" ");
+    }
+    Serial.println();
+    Serial.print("Length is ");
+    Serial.println(length);
     uint16_t pixCnt = 0;
     uint8_t chan = 0;
     Serial.println("About to unmarshal");
