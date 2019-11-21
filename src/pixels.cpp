@@ -1,29 +1,11 @@
 #include <pixels.h>
 
-
-// This block will select if the ESP32 or ESP8266 is selected. It is in the cpp file to stay private,
-// if I were coding this library at work, I would do this, but it could easily be placed in the header
-// file if you want to interact with it in main.cpp
-#ifdef ESP32
-    // This section selects whether we want to initialize the Neopixel lib in RGB or RGBW. Since I made
-    /// a class, I can make it so you can hot select RGB or RGBW. I just don't see a use for that. ( I 
-    // looked into putting it into class, we can if we use a different lib. This one is pretty inflexable
-    // after compile time. But idc rn)
-    #ifdef RGBW
-        NeoPixelBus<NeoGrbwFeature, Neo800KbpsMethod> strip(PIXELCOUNT, PIXELPIN);
-    #else
-        NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PIXELCOUNT, PIXELPIN);
-    #endif
-#elif ESP8266
-    #ifndef RGBW
-        NeoPixelBus<NeoRgbwFeature, NeoEsp8266Dma800KbpsMethod> strip(PIXELCOUNT, 3);
-    #else
-        NeoPixelBus<NeoGrbwFeature, NeoEsp8266Dma800KbpsMethod> strip(PIXELCOUNT, 3);
-    #endif
+#ifdef RGBW
+    // 4 bytes * pixel
+    NeoPixelBus<NeoRgbwFeature, NeoEsp32Rmt0Ws2812xMethod> strip(PIXELCOUNT, PIXELPIN);
 #else
-    // Place for someone who wants to support another platform to get started easily
-    NeoPixelBus<, > strip(PIXELCOUNT, 3);
-    #error This was written for ESPs, if you would like to use something else, define it above
+    // RGB 3 bytes * pixel
+    NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> strip(PIXELCOUNT, PIXELPIN);
 #endif
 
 PIXELS::PIXELS(){} // I'll do something with this, I swear.
