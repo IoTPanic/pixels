@@ -109,3 +109,13 @@ pixel *PIXELS::unmarshal(uint8_t *pyld, unsigned len, uint16_t *pixCnt, uint8_t 
     return result; 
 }
 
+void PIXELS::all_off(){
+    for(unsigned i = 0; i<PIXELCOUNT; i++){
+        #ifdef RGBW
+        strip.SetPixelColor(i, RgbwColor(0,0,0,0));
+        #else
+        strip.SetPixelColor(i, RgbColor(0,0,0));
+        #endif
+    }
+    strip.Show();
+}

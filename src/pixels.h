@@ -10,7 +10,7 @@
 #ifndef pixels_h
 #define pixels_h
 #include <Arduino.h>
-#define RGBW //Removing the comment will enable RGBW instead of RGB
+//#define RGBW //Removing the comment will enable RGBW instead of RGB
 
 #define PIXELCOUNT 144
 #define PIXELPIN 19
@@ -44,6 +44,7 @@ class PIXELS
     // There is another versio that will accapt a single pixel and location
     void show(pixel *pixels, unsigned cnt);
 
+    void all_off();
     private:
     // unmarshal returns a pointer to an array of pixels and accepts a pointer to a uint8_t array payload with the length of the array, as
     // well as a pointer to an unsigned integer which will be changed to the number of LEDs decoded from the payload. If invalid a NULL will
