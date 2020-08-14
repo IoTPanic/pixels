@@ -1,5 +1,7 @@
 # PIXELS - A super simple LED application layer
 
+**Don't use right now, this is unfinished and a much better version will be released soon**
+
 This protocols goal is to allow for sending pixel data (color values) to rgb and rgbw stripes in a performant way. This is especially useful for sending data in "realtime" to led stripes connected to an ESP32 via WIFI/UDP.
 
 This protocol was written originally for [udpx](https://github.com/martinberlin/udpx).
